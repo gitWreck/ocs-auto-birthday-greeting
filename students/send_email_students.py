@@ -12,6 +12,8 @@ EMAIL_SERVER = "smtp.gmail.com"  # Adjust server address
 # Load the environment variables
 current_dir = Path(__file__).resolve().parent if "__file__" in locals() else Path.cwd()
 envars = current_dir / ".env"
+if not envars.exists():
+    envars = current_dir.parent / ".env"
 load_dotenv(envars)
 
 # Read environment variables
@@ -19,35 +21,26 @@ sender_email = os.getenv("EMAIL")
 password_email = os.getenv("PASSWORD")
 
 
-def send_email(subject, receiver_email, name, birthday_date, is_student=False):
+def send_email(subject, receiver_email, name, birthday_date):
     # Create the base text message.
 
     # # Add the html version.  This converts the message into a multipart/alternative
-
-    # print(current_dir)
-    # print(password_email)
-    gif_dir = '/home/cfnrocs0118/ocs_auto_birthday_greeting/birthday_gif/'
-
-    if is_student:
-        card_header_color = '#0c513e'
-        CRem = f"Have a very happy birthday, {name.title()}!"
-    else:
-        card_header_color = '#90143c'
-        CRem = "Have a very happy birthday!"
+    # background-color: #c1faa0; card-header
 
     msg = EmailMessage()
     msg["Subject"] = subject + " " + name.title() + "!"
     msg["From"] = formataddr(("Office of the College Secretary CFNR UP Los Banos", f"{sender_email}"))
     msg["To"] = receiver_email
 
-    gifs = os.listdir(gif_dir)
+    gifs = os.listdir('/home/aesplana31/Birthday_Greeting/birthday_gif/')
     r = random.choice(gifs)
 
-    attachment = os.path.join(gif_dir, r)
+    attachment = '/home/aesplana31/Birthday_Greeting/birthday_gif/' + r
     attachment_cid = make_msgid()
 
     GLabel = f"Dear {name.title()},"
     CBody = "Today, we celebrate YOU!"
+    CRem = f"Have a very happy birthday, {name.title()}!"
     msg.set_content(
         '''
         <head>
@@ -61,14 +54,12 @@ def send_email(subject, receiver_email, name, birthday_date, is_student=False):
           color: #426839;
           font-family: monospace;
           text-transform: uppercase;
-          word-spacing: -4px;
         }
         p {
           color: #333;
           font-size: 20px;
           text-transform: uppercase;
           font-family: "Lucida Console", "Courier New", monospace;
-          word-spacing: -4px;
         }
         img {
             width: 550px;
@@ -81,7 +72,7 @@ def send_email(subject, receiver_email, name, birthday_date, is_student=False):
             display: flex;
         }
         .card-header {
-            background-color: %s;
+            background-color: #0c513e;
             border-radius: 15px 0px 0px 15px;
             padding: 20px;
             width: 30px;
@@ -96,17 +87,17 @@ def send_email(subject, receiver_email, name, birthday_date, is_student=False):
         </head>
         <body>
             <div class="card-container">
-                <div class="card-header">
-                </div>
-                <div class="card-content">
-                    <h1>%s</h1>
-                    <p>%s</p>
-                        <img src="cid:%s" alt="Birthday GIF"/>
-                    <p>%s</p>
-                </div>
+            <div class="card-header">
             </div>
+            <div class="card-content">
+                <h1>%s</h1>
+                <p>%s</p>
+                    <img src="cid:%s" alt="Birthday GIF"/>
+                <p>%s</p>
+            </div>
+        </div>
         </body>
-        ''' % (card_header_color, GLabel, CBody, attachment_cid[1:-1], CRem), 'html')
+        ''' % (GLabel, CBody,attachment_cid[1:-1], CRem), 'html')
 
     with open(attachment, 'rb') as fp:
         msg.add_related(

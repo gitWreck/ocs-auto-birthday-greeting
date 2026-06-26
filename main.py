@@ -1,48 +1,41 @@
-from datetime import date 
-import pandas as pd  # pip install pandas
-# from deta import app
-from send_email import send_email
-import datetime
-from datetime import datetime
+import argparse
 
+import main_faculty
+import main_students
 
-# not secure
-SHEET_ID = "1X9R5q-tXTkYjDjdoggGQkL1Cc7BLZcu6Fy8A3JHnJk4" 
-# SHEET_NAME = "Birthday_Sheet"
-month_text = datetime.now().strftime("%B")
-if (month_text) :
-    SHEET_NAME = month_text
+def run_faculty():
+    print("=== STARTING FACULTY BIRTHDAY CHECK ===")
+    try:
+        faculty_df = main_faculty.load_df(main_faculty.URL)
+        faculty_result = main_faculty.query_data_and_send_emails(faculty_df)
+        print(f"Faculty Result: {faculty_result}")
+    except Exception as e:
+        print(f"Error running faculty birthdays: {e}")
 
-URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+def run_students():
+    print("=== STARTING STUDENTS BIRTHDAY CHECK ===")
+    try:
+        student_df = main_students.load_df(main_students.URL)
+        student_result = main_students.query_data_and_send_emails(student_df)
+        print(f"Students Result: {student_result}")
+    except Exception as e:
+        print(f"Error running students birthdays: {e}")
 
+def main():
+    parser = argparse.ArgumentParser(description="Auto Birthday Greetings Runner")
+    parser.add_argument(
+        "--type",
+        choices=["faculty", "students", "both"],
+        default="both",
+        help="Specify whether to run faculty, students, or both (default: both)"
+    )
+    args = parser.parse_args()
 
-def load_df(url):
-    parse_dates = ["Birthday"]
-    df = pd.read_csv(url, parse_dates=parse_dates)
-    return df
+    if args.type in ("faculty", "both"):
+        run_faculty()
+    
+    if args.type in ("students", "both"):
+        run_students()
 
-
-def query_data_and_send_emails(df):
-    present = date.today()
-    email_counter = 0
-    for _, row in df.iterrows():
-        if (present = row["Birthday"].date()):
-            send_email(
-                subject=f'Happy Birthday!!',
-                receiver_email=row["Email"],
-                name=row["Name"],
-                birthday_date=row["Birthday"].strftime("%d, %b %Y"),  # 22, Aug 2023
-            )
-            email_counter += 1
-    return f"Total Emails Sent: {email_counter}"
-
-
-df = load_df(URL)
-result = query_data_and_send_emails(df)
-print(result)
-
-# @app.lib.cron()
-# def cron_job(event):
-#     df = load_df(URL)
-#     result = query_data_and_send_emails(df)
-#     return result
+if __name__ == "__main__":
+    main()
