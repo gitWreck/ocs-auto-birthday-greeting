@@ -1,4 +1,4 @@
-import os, random
+import os, random, json
 import smtplib
 from email.message import EmailMessage
 from email.utils import make_msgid, formataddr
@@ -18,8 +18,25 @@ load_dotenv(envars)
 sender_email = os.getenv("EMAIL")
 password_email = os.getenv("PASSWORD")
 
+# Load birthday phrases
+phrases_path = current_dir / "birthday_phrases.json"
+try:
+    with open(phrases_path, "r", encoding="utf-8") as f:
+        phrases_data = json.load(f)
+except Exception:
+    phrases_data = {
+        "body_phrases": ["Today, we celebrate YOU!"],
+        "closing_phrases": ["Have a very happy birthday!"]
+    }
+
 
 def send_email(subject, receiver_email, name, birthday_date, is_student=False):
+    if not sender_email or not password_email:
+        raise ValueError(
+            "EMAIL or PASSWORD environment variables are not set. "
+            "Please check your .env file in the root folder."
+        )
+
     # Create the base text message.
 
     # # Add the html version.  This converts the message into a multipart/alternative
@@ -27,13 +44,26 @@ def send_email(subject, receiver_email, name, birthday_date, is_student=False):
     # print(current_dir)
     # print(password_email)
     gif_dir = '/home/cfnrocs0118/ocs_auto_birthday_greeting/birthday_gif/'
+    if not os.path.exists(gif_dir):
+        gif_dir = os.path.join(current_dir, 'birthday_gif')
+
+    body_phrases = phrases_data.get("body_phrases", ["Today, we celebrate YOU!"])
+    closing_phrases = phrases_data.get("closing_phrases", ["Have a very happy birthday!"])
+
+    CBody = random.choice(body_phrases)
+    selected_closing = random.choice(closing_phrases)
 
     if is_student:
         card_header_color = '#0c513e'
-        CRem = f"Have a very happy birthday, {name.title()}!"
+        if "birthday!" in selected_closing.lower():
+            CRem = selected_closing.replace("birthday!", f"birthday, {name.title()}!")
+        elif "birthday" in selected_closing.lower():
+            CRem = selected_closing.replace("birthday", f"birthday, {name.title()}")
+        else:
+            CRem = f"{selected_closing} Have a very happy birthday, {name.title()}!"
     else:
         card_header_color = '#90143c'
-        CRem = "Have a very happy birthday!"
+        CRem = selected_closing
 
     msg = EmailMessage()
     msg["Subject"] = subject + " " + name.title() + "!"

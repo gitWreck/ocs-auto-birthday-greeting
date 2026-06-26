@@ -60,6 +60,7 @@ def load_df(url: str) -> pd.DataFrame:
     # Supports: 5/9/2007, 05/09/2007, 5-9-2007, etc.
     df["Birthday"] = pd.to_datetime(
         df["Birthday"],
+        format="mixed",
         errors="coerce"
     )
 
