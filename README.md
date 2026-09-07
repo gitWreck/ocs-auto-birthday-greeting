@@ -1,78 +1,108 @@
-# Automate Your Emails Using Python - Build A Payment Reminder & Schedule Your Scripts Online (FREE)
+# OCS Auto Birthday Greetings
 
-Are you still manually sending emails to your customers and clients? In this video, I'll show you how to send automated reminders. In particular, I will show you how to send emails with Python. Afterwards, we are going to host our Python script. You can then determine when exactly you want to run your script. This solution might be helpful if you do not want to spend a dime on any expensive email automation solution. You can build your email automation solution for free if you follow this video.
+Automated birthday greeting sender for **UP Los Baños - College of Forestry and Natural Resources (CFNR) Office of the College Secretary (OCS)**.
 
+Fetches daily celebrants from Google Sheets (Faculty & Students), generates personalized HTML emails with animated GIFs, and sends them via Gmail SMTP.
 
-## Architecture
-![Architecture](./Architecture.png?raw=true "Architecture")
+---
 
+## Features
 
-## Video Tutorial
-[![YouTube Video](https://img.youtube.com/vi/OLrC4J2-pvk/0.jpg)](https://youtu.be/OLrC4J2-pvk)
+- **Multi-Cohort Support**: Handles both Faculty and Students with cohort-specific email styling and address formats:
+  - **Faculty**: Maroon header (`#90143c`), addressed by title/designation and nickname/firstname.
+  - **Students**: Forest green header (`#0c513e`), addressed by full name.
+- **Dynamic Google Sheets Sync**: Fetches live data via Google Visualization API CSV export filtered by current month tab (PHT / UTC+8).
+- **Embedded Media & Phrases**:
+  - Random GIF selected from `birthday_gif/` and embedded inline (`cid`).
+  - Customizable phrases picked dynamically from `birthday_phrases.json`.
+- **Activity Logging**: Records runs and emails sent to `birthday_greetings.log`.
+- **Scheduled Delivery**: Runs daily at 8:00 AM PHT (00:00 UTC) via GitHub Actions.
 
+---
 
-## Requirements
-Install the dependencies with pip
+## Project Structure
+
 ```
-pandas
-python-dotenv
+ocs-auto-birthday-greetings/
+├── .github/
+│   └── workflows/
+│       └── daily_birthday.yml    # GitHub Actions cron workflow (00:00 UTC)
+├── birthday_gif/                 # Folder containing birthday GIFs for attachments
+├── birthday_phrases.json         # Custom body & closing greetings
+├── birthday_greetings.log        # Activity execution log
+├── main.py                       # Main entry point & Google Sheet parser
+├── send_email.py                 # Email formatting (HTML/MIME) & SMTP sender
+├── test_belated.py               # Test runner & CLI for belated birthday greetings
+├── requirements.txt              # Python dependencies
+└── .env                          # Local environment variables (git-ignored)
 ```
-[FOR WINDOWS]
-Install the Deta CLI, open PowerShell and enter:
+
+---
+
+## Setup & Installation
+
+### 1. Prerequisites
+- Python 3.10+
+- A Gmail account with an [App Password](https://myaccount.google.com/apppasswords) enabled.
+
+### 2. Install Dependencies
 ```bash
-  iwr https://get.deta.dev/cli.ps1 -useb | iex
+pip install -r requirements.txt
 ```
 
-## Make a Google Sheets Copy
-Here you find the **Google Sheet** I have used in the video: ⤵ <br/>
-https://pythonandvba.com/sheets-invoice-data <br/>
-![Google Sheets](/google_sheets_invoice_data.png?raw=true "Google Sheets")
+### 3. Configure Environment Variables
+Create a `.env` file in the root folder:
+```env
+EMAIL="your_email@gmail.com"
+PASSWORD="your_16_char_gmail_app_password"
+```
 
-## Deployment
-**Official Documentation:** https://docs.deta.sh/docs/micros/getting_started <br/>
+---
 
-[FOR WINDOWS] <br/>
-To deploy this project you:
-1) login via the deta CLI
+## Usage
+
+Run the script locally:
+
 ```bash
-  deta login
+# Run for both faculty and students (default)
+python main.py
+
+# Run only for faculty
+python main.py --type faculty
+
+# Run only for students
+python main.py --type students
 ```
-2) create a new micro (only once!)
+
+---
+
+## Testing Belated Greetings
+
+Use [`test_belated.py`](file:///c:/devs/ocs-auto-birthday-greetings/test_belated.py) to test or manually send belated birthday greetings safely:
+
 ```bash
-  deta new --python first_micro
+# 1. Safe dry-run preview with mock celebrants (no emails sent, no sheet required)
+python test_belated.py --mock
+
+# 2. Check yesterday's celebrants from Google Sheets (dry run preview)
+python test_belated.py --days-ago 1
+
+# 3. Check a specific past date (MM-DD)
+python test_belated.py --date 09-05
+
+# 4. Safe live test: send mock email routed ONLY to your own test email address
+python test_belated.py --mock --test-email your_email@up.edu.ph --send
+
+# 5. Run automated unit tests
+python -m unittest test_belated.py
 ```
-3) upload your environment variables
-```bash
-  deta update -e <env_file_name>
-```
-4) deploy your app
-```bash
-  deta deploy
-```
-5) set the cron job <br/>
-Example: Run every minute
-```bash
-  deta cron set "1 minute"
-```
 
-## Environment Variables
-To run this project, you will need to add the following environment variables to your .env file <br/>
-`EMAIL`
-`PASSWORD`
+---
 
+## Automation (GitHub Actions)
 
-## Get to Know Me & Stay Connected
-- 📺 **YouTube:** [CodingIsFun](https://youtube.com/c/CodingIsFun)
-- 🌐 **Website:** [PythonAndVBA](https://pythonandvba.com)
-- 💬 **Discord:** [Join our Community](https://pythonandvba.com/discord)
-- 💼 **LinkedIn:** [Connect with me](https://www.linkedin.com/in/sven-bosau/)
-- 📸 **Instagram:** [Follow me](https://www.instagram.com/codingisfun_official/)
-
-## Support My Work
-Love my content and want to show appreciation? Why not [buy me a coffee](https://pythonandvba.com/coffee-donation) to fuel my creative engine? Your support means the world to me! 😊
-
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://pythonandvba.com/coffee-donation)
-
-## Feedback
-Got some thoughts or suggestions? Don't hesitate to reach out to me at contact@pythonandvba.com. I'd love to hear from you! 💡
-![Logo](https://www.pythonandvba.com/banner-img)
+The workflow [`.github/workflows/daily_birthday.yml`](file:///.github/workflows/daily_birthday.yml) automates execution:
+- **Trigger**: Runs daily at `00:00 UTC` (`8:00 AM PHT`) and supports manual trigger (`workflow_dispatch`).
+- **Required Repository Secrets** (in GitHub repo `Settings -> Secrets and variables -> Actions`):
+  - `EMAIL`: Sender Gmail address.
+  - `PASSWORD`: Gmail App Password.

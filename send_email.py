@@ -39,12 +39,24 @@ def log_activity(message: str):
         f.write(f"{timestamp} - {message}\n")
 
 
+def format_display_name(name: str) -> str:
+    if not name:
+        return ""
+    # Standard title casing
+    titled = name.strip().title()
+    # Correct Filipino/English titles deformed by Python's .title()
+    titled = titled.replace("Ma'Am", "Ma'am").replace("Ma'am", "Ma'am")
+    return titled
+
+
 def send_email(
     subject: str,
     receiver_email: str,
     name: str,
     birthday_date: str,
     is_student: bool = False,
+    custom_message: str = None,
+    body_phrase: str = None,
 ):
     if not sender_email or not password_email:
         raise ValueError(
@@ -63,26 +75,34 @@ def send_email(
         "closing_phrases", ["Have a very happy birthday!"]
     )
 
-    c_body = random.choice(body_phrases) if body_phrases else "Today, we celebrate YOU!"
-    selected_closing = random.choice(closing_phrases) if closing_phrases else "Have a very happy birthday!"
+    c_body = body_phrase if body_phrase else (
+        random.choice(body_phrases) if body_phrases else "Today, we celebrate YOU!"
+    )
+    selected_closing = custom_message if custom_message else (
+        random.choice(closing_phrases) if closing_phrases else "Have a very happy birthday!"
+    )
+
+    display_name = format_display_name(name)
 
     # Cohort customization
     if is_student:
         card_header_color = "#0c513e"
-        if "birthday!" in selected_closing.lower():
+        if custom_message:
+            c_rem = custom_message
+        elif "birthday!" in selected_closing.lower():
             c_rem = selected_closing.replace(
-                "birthday!", f"birthday, {name.title()}!"
+                "birthday!", f"birthday, {display_name}!"
             )
         elif "birthday" in selected_closing.lower():
-            c_rem = selected_closing.replace("birthday", f"birthday, {name.title()}")
+            c_rem = selected_closing.replace("birthday", f"birthday, {display_name}")
         else:
-            c_rem = f"{selected_closing} Have a very happy birthday, {name.title()}!"
+            c_rem = f"{selected_closing} Have a very happy birthday, {display_name}!"
     else:
         card_header_color = "#90143c"
         c_rem = selected_closing
 
     msg = EmailMessage()
-    msg["Subject"] = f"{subject} {name.title()}!"
+    msg["Subject"] = f"{subject} {display_name}!"
     msg["From"] = formataddr(
         ("Office of the College Secretary CFNR UP Los Banos", f"{sender_email}")
     )
@@ -96,7 +116,7 @@ def send_email(
     attachment_path = gif_dir / selected_gif
     attachment_cid = make_msgid()
 
-    g_label = f"Dear {name.title()},"
+    g_label = f"Dear {display_name},"
     html_content = (
         """
         <head>
